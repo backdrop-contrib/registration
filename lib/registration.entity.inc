@@ -239,6 +239,10 @@ class Registration extends Entity {
    * Implements EntityInterface::entityType().
    */
   public function entityType() {
+    return 'registration';
+  }
+
+  public function bundle() {
     return $this->type;
   }
 
