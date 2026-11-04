@@ -549,15 +549,15 @@ function registration_user_cancel($edit, $account, $method) {
     if ($method == 'user_cancel_reassign') {
       db_update('registration')
         ->fields(array(
-        'author_uid' => 0,
-      ))
+          'author_uid' => 0,
+        ))
         ->condition('author_uid', $account->uid)
         ->execute();
 
       db_update('registration')
         ->fields(array(
-        'user_uid' => NULL,
-      ))
+          'user_uid' => NULL,
+        ))
         ->condition('user_uid', $account->uid)
         ->execute();
     }
@@ -582,8 +582,8 @@ function registration_user_delete($account) {
     // registration. Simply disassociate the user with the registration.
     db_update('registration')
       ->fields(array(
-      'user_uid' => NULL,
-    ))
+        'user_uid' => NULL,
+      ))
       ->condition('user_uid', $account->uid)
       ->execute();
     // Delete entries in the cache as well.
@@ -672,7 +672,7 @@ function registration_register_page_access($entity_type, $entity) {
  *   The host entity type.
  * @param object $entity
  *   The host entity.
- * @param object $account = NULL
+ * @param object|null $account
  *   An account for which to check access. If NULL is provided the current
  *   user is used.
  *
@@ -993,7 +993,7 @@ function registration_entity_update($entity, $entity_type) {
   if ($registration_type !== FALSE) {
     list($entity_id) = entity_extract_ids($entity_type, $entity);
     $settings = registration_entity_settings($entity_type, $entity_id);
-    // no settings yet, try to set defaults
+    // No settings yet, try to set defaults.
     if (!$settings) {
       registration_entity_set_default_settings($entity_type, $entity);
     }
@@ -1035,7 +1035,7 @@ function registration_entity_delete($entity, $entity_type) {
     ->condition('entity_type', $entity_type)
     ->execute();
 
-  // Remove references to a registration_type on host entities
+  // Remove references to a registration_type on host entities.
   if ($entity_type == 'registration_type') {
     $registration_fields = field_read_fields(array('type' => 'registration'));
     if (!empty($registration_fields)) {
@@ -1123,6 +1123,9 @@ function theme_registration_property_field($variables) {
   return registration_theme_field($variables);
 }
 
+/**
+ * Theme function for registration fields.
+ */
 function registration_theme_field($variables) {
   $output = '';
 
@@ -1200,11 +1203,11 @@ function registration_send_broadcast($entity_type, $entity_id, $subject, $messag
     return;
   }
 
-  // grab registration entity settings
+  // Grab registration entity settings.
   $settings = registration_entity_settings($entity_type, $entity_id);
   $from = $settings['settings']['from_address'] ? $settings['settings']['from_address'] : '';
 
-  // grab all registrations
+  // Grab all registrations.
   $query = new EntityFieldQuery();
   $entities = $query
     ->entityCondition('entity_type', 'registration')
@@ -1223,7 +1226,7 @@ function registration_send_broadcast($entity_type, $entity_id, $subject, $messag
       'message' => $message,
     );
 
-    // load registrations and build an array of recipients
+    // Load registrations and build an array of recipients.
     $registrations = registration_load_multiple(
       array_keys($entities['registration'])
     );
@@ -1242,7 +1245,7 @@ function registration_send_broadcast($entity_type, $entity_id, $subject, $messag
     );
     backdrop_alter($hooks, $registrations, $context);
 
-    // send the email to each registrant and communicate results
+    // Send the email to each registrant and communicate results.
     $success_count = 0;
     foreach ($registrations as $registration) {
       $wrapper = entity_metadata_wrapper('registration', $registration);
@@ -1296,15 +1299,15 @@ function registration_send_broadcast($entity_type, $entity_id, $subject, $messag
  * @param int $entity_id
  *   The host entity ID.
  * @param array $settings
- *   Array keyed by field names from {registration_entity}
+ *   Array keyed by field names from {registration_entity}.
  */
 function registration_update_entity_settings($entity_type, $entity_id, $settings) {
   // Insert or update registration entity settings.
   db_merge('registration_entity')
     ->key(array(
-    'entity_id' => $entity_id,
-    'entity_type' => $entity_type,
-  ))
+      'entity_id' => $entity_id,
+      'entity_type' => $entity_type,
+    ))
     ->fields($settings)
     ->execute();
 
@@ -1315,8 +1318,7 @@ function registration_update_entity_settings($entity_type, $entity_id, $settings
  * Implements hook_cron().
  */
 function registration_cron() {
-  //@TODO: need to have a sensible batch limit, passed in as a limit param
-
+  // @TODO: need to have a sensible batch limit, passed in as a limit param
   // Send reminder emails.
   // Grab all registrations that have reminders set for this day.
   $results = db_select('registration_entity', 're')
@@ -1419,24 +1421,24 @@ function registration_status($entity_type, $entity_id, $reset = FALSE, $spaces =
   $close = isset($settings['close']) ? strtotime($settings['close']) : NULL;
   $now = REQUEST_TIME;
 
-  // only explore other settings if main status is enabled
+  // Only explore other settings if main status is enabled.
   if ($status) {
-    // check max allowed spaces per registration
+    // Check max allowed spaces per registration.
     if ((isset($settings['settings']['maximum_spaces']) && $settings['settings']['maximum_spaces']) && $spaces > $settings['settings']['maximum_spaces']) {
       $status = FALSE;
       $errors[] = t('You may not register for more than @count spaces.', array('@count' => $settings['settings']['maximum_spaces']));
     }
-    // check capacity
+    // Check capacity.
     if (!registration_has_room($entity_type, $entity_id, $spaces, $registration_id, $reset)) {
       $status = FALSE;
       $errors[] = t(REGISTRATION_INSUFFICIENT_SPACES_MESSAGE);
     }
-    // check open date range
+    // Check open date range.
     if (isset($open) && ($now < $open)) {
       $status = FALSE;
       $errors[] = t('Registration is not yet open.');
     }
-    // check close date range
+    // Check close date range.
     if (isset($close) && ($now >= $close)) {
       $status = FALSE;
       $errors[] = t('Registration close date has passed.');
@@ -1480,7 +1482,7 @@ function registration_get_entity_registration_type($entity_type, $entity) {
   foreach ($fields as $field) {
     if (isset($entity->{$field['field_name']})) {
       $items = field_get_items($entity_type, $entity, $field['field_name']);
-      // we're assuming there's only a single value in this field
+      // we're assuming there's only a single value in this field.
       if (!empty($items) && count($items) == 1 && !empty($items[0]['registration_type'])) {
         return $items[0]['registration_type'];
       }
@@ -1610,7 +1612,7 @@ function registration_tokens($type, $tokens, array $data = array(), array $optio
  * @return bool
  */
 function registration_is_registered(Registration $registration, $anon_mail = NULL, $uid = NULL, $states = array()) {
-  // must provide an UID or anon_mail
+  // Must provide an UID or anon_mail.
   // @todo: better course of action here?
   if (!$anon_mail && !$uid) {
     return FALSE;
@@ -1701,7 +1703,7 @@ function registration_access_people(Registration $registration, $account = NULL)
  * Implements hook_field_extra_fields().
  */
 function registration_field_extra_fields() {
-  // expose the email property on the fields and display settings forms.
+  // Expose the email property on the fields and display settings forms.
   $extra = array();
   foreach (registration_get_types() as $type => $reg_type) {
     $extra['registration'][$type] = array(
@@ -1768,8 +1770,9 @@ function registration_field_extra_fields() {
 /**
  * Return all registration state entities.
  *
- * @param array $conditions - key => value array of properties and conditions
- *   that restrict what registration_state entities will be returned
+ * @param array $conditions
+ *   A key => value array of properties and conditions that restrict what
+ *   registration_state entities will be returned.
  *
  * @return array
  *   An array of registration state entities.
@@ -1881,7 +1884,7 @@ function registration_get_states_options($conditions = array()) {
 /**
  * Callback to get $registration->host.
  *
- * @see registration_entity_property_info().
+ * @see registration_entity_property_info()
  */
 function registration_property_host_get(Registration $registration, array $options, $property_name, $entity_type) {
   $entity = entity_load($registration->entity_type, $registration->entity_id);
@@ -1890,7 +1893,7 @@ function registration_property_host_get(Registration $registration, array $optio
 
 /**
  * Callback to set $registration->host.
- * @see registration_entity_property_info().
+ * @see registration_entity_property_info()
  */
 function registration_property_host_set(Registration $registration, $name, $value, $lang, $type, $info) {
   $registration->entity_type = $value->type();
@@ -1900,7 +1903,7 @@ function registration_property_host_set(Registration $registration, $name, $valu
 /**
  * Callback to get $registration->author.
  *
- * @see registration_entity_property_info().
+ * @see registration_entity_property_info()
  */
 function registration_property_author_get(Registration $registration, array $options, $property_name, $entity_type) {
   if (is_numeric($registration->author_uid)) {
@@ -1912,7 +1915,7 @@ function registration_property_author_get(Registration $registration, array $opt
 /**
  * Callback to get $registration->user.
  *
- * @see registration_entity_property_info().
+ * @see registration_entity_property_info()
  */
 function registration_property_user_get(Registration $registration, array $options, $property_name, $entity_type) {
   if (is_numeric($registration->user_uid)) {
@@ -1974,8 +1977,8 @@ function registration_get_properties($entity, array $options, $name, $type) {
       return entity_metadata_wrapper($entity->entity_type, $entity->entity);
       break;
     case 'mail':
-      // If a user is set, use their email
-      $user =  entity_metadata_wrapper('registration', $entity)->user;
+      // If a user is set, use their email.
+      $user = entity_metadata_wrapper('registration', $entity)->user;
       return ($user->value()) ? $user->mail->value() : $entity->anon_mail;
       break;
   }
@@ -2070,7 +2073,7 @@ function registration_access($op, ?Registration $registration = NULL, $account =
 
   $type = $registration->bundle();
 
-  // bypass further access checks if user can administer registration
+  // Bypass further access checks if user can administer registration.
   if ($admin || user_access("administer $type registration", $account)) {
     return TRUE;
   }
@@ -2105,7 +2108,7 @@ function registration_access($op, ?Registration $registration = NULL, $account =
   $author = $wrapper->author->value();
   $account_own = ($author && ($author->uid == $account->uid));
 
-  // Fall back to assigned permissions
+  // Fall back to assigned permissions.
   switch ($op) {
     case 'view':
       return ($account_own && user_access("view own $type registration", $account)) || user_access("view $type registration", $account);
@@ -2204,13 +2207,13 @@ function registration_i18n_string_info() {
 /**
  * Translates a config string to the current language or to a given language.
  *
- * @param $name string
+ * @param string $name
  *   A key *without* a textgroup (this module's textgroup will be prefixed
  *   automatically).
- * @param $string string
+ * @param string $string
  *   A user-entered configuration string in the default language. The default
  *   language may or may not be English.
- * @param $langcode string
+ * @param string $langcode
  *   The language code. Defaults to NULL.
  *
  * @return string
@@ -2227,13 +2230,13 @@ function _registration_translate($name, $string, $langcode = NULL) {
 /**
  * Registers a config string so it can later be translated.
  *
- * @param $name string
+ * @param string $name
  *   A key *without* a textgroup (this module's textgroup will be prefixed
  *   automatically).
- * @param $string string
+ * @param string $string
  *   A user-entered configuration string in the default language. The default
  *   language may or may not be English.
- * @param $langcode string
+ * @param string $langcode
  *   The language code. Defaults to NULL.
  *
  * @return string
@@ -2267,7 +2270,7 @@ function registration_autoload_info() {
  * Implements hook_form_alter().
  */
 function registration_form_alter(&$form, &$form_state, $form_id) {
-  // Add the value per space
+  // Add the value per space.
   if ($form_id === 'field_ui_field_edit_form') {
     if (isset($form['#instance']['entity_type']) && $form['#instance']['entity_type'] === 'registration') {
       $form['instance']['settings']['value_per_space'] = array(
