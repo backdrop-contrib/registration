@@ -1,13 +1,19 @@
 <?php
-
 /**
  * @file
- * The controller class used for registration state entities
+ * The controller class used for registration state entities.
+ */
+
+/**
+ * Controller class.
  */
 class RegistrationStateController extends EntityPlusControllerExportable {
   protected $cache;
 
-  public function save($entity, DatabaseTransaction $transaction = NULL) {
+  /**
+   * Saves a registration state entity.
+   */
+  public function save($entity, ?DatabaseTransaction $transaction = NULL) {
     parent::save($entity, $transaction);
 
     if ($entity->default_state == 1) {
@@ -17,5 +23,4 @@ class RegistrationStateController extends EntityPlusControllerExportable {
       $query->execute();
     }
   }
-
 }
